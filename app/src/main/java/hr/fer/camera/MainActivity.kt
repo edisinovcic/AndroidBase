@@ -8,6 +8,9 @@ import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.Button
+import android.widget.Toast
 import hr.fer.camera.Fragments.PreviewFragment
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -26,7 +29,11 @@ class MainActivity : AppCompatActivity() {
             selectDrawerItem(it)
             true
         }
+        button.setOnClickListener {
+            onButtonClicked(it)
+        }
         drawerLayout.addDrawerListener(drawerToogle)
+
 
         val fragment = PreviewFragment.newInstance()
         addFragment(fragment)
@@ -47,10 +54,16 @@ class MainActivity : AppCompatActivity() {
         drawerToogle.onConfigurationChanged(newConfig)
     }
 
+    private fun onButtonClicked(view: View){
+        Toast.makeText(this, "Button clicked", Toast.LENGTH_LONG).show()
+        //TODO: add behaviour for on button click
+    }
+
     private fun selectDrawerItem(item: MenuItem) {
         var fragment: Fragment? = null
 
 //        val fragmentClass = TODO("Will be implemented later")
+        Toast.makeText(this, "Menu clicked", Toast.LENGTH_LONG).show()
         drawerLayout.closeDrawer(GravityCompat.START)
     }
 
