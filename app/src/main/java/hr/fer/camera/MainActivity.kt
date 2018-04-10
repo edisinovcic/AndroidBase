@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.Toast
 import hr.fer.camera.Fragments.PreviewFragment
+import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -34,14 +35,16 @@ class MainActivity : AppCompatActivity() {
         }
         drawerLayout.addDrawerListener(drawerToogle)
 
+        SURF.SURFImpl()
+
 
         val fragment = PreviewFragment.newInstance()
         addFragment(fragment)
 
         // The ViewPager will be implemented once it's fragments have
         // been implemented.
-//        val pagerAdapter = CamFragmentPagerAdapter(supportFragmentManager)
-//        viewPager.adapter = pagerAdapter
+        // val pagerAdapter = CamFragmentPagerAdapter(supportFragmentManager)
+        // viewPager.adapter = pagerAdapter
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
