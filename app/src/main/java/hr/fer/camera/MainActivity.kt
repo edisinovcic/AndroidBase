@@ -47,12 +47,6 @@ class MainActivity : AppCompatActivity() {
         addFragment(fragment)
 
 
-        //SURF().detect(getLocalAssets())
-
-        // The ViewPager will be implemented once it's fragments have
-        // been implemented.
-        // val pagerAdapter = CamFragmentPagerAdapter(supportFragmentManager)
-        // viewPager.adapter = pagerAdapter
     }
 
     fun getLocalAssets(): List<Bitmap> {
