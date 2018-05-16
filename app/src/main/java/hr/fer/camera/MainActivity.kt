@@ -1,6 +1,9 @@
 package hr.fer.camera
 
 import android.content.res.Configuration
+import android.content.res.Resources.getSystem
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.view.GravityCompat
@@ -9,11 +12,15 @@ import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Button
 import android.widget.Toast
 import hr.fer.camera.Fragments.PreviewFragment
 import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.BufferedInputStream
+import org.opencv.highgui.Highgui
+import org.opencv.core.Mat
+
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,16 +42,23 @@ class MainActivity : AppCompatActivity() {
         }
         drawerLayout.addDrawerListener(drawerToogle)
 
-        SURF.SURFImpl()
-
 
         val fragment = PreviewFragment.newInstance()
         addFragment(fragment)
+
+
+        //SURF().detect(getLocalAssets())
 
         // The ViewPager will be implemented once it's fragments have
         // been implemented.
         // val pagerAdapter = CamFragmentPagerAdapter(supportFragmentManager)
         // viewPager.adapter = pagerAdapter
+    }
+
+    fun getLocalAssets(): List<Bitmap> {
+        val bookObject = BitmapFactory.decodeStream(BufferedInputStream(assets.open("bookobject.jpg")))
+        val bookScene = BitmapFactory.decodeStream(BufferedInputStream(assets.open("bookscene.jpg")))
+        return listOf(bookObject, bookScene)
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -57,9 +71,14 @@ class MainActivity : AppCompatActivity() {
         drawerToogle.onConfigurationChanged(newConfig)
     }
 
-    private fun onButtonClicked(view: View){
+    private fun onButtonClicked(view: View) {
         Toast.makeText(this, "Button clicked", Toast.LENGTH_LONG).show()
         //TODO: add behaviour for on button click
+
+        SURF().detect(getLocalAssets())
+
+
+
     }
 
     private fun selectDrawerItem(item: MenuItem) {
@@ -84,4 +103,6 @@ class MainActivity : AppCompatActivity() {
         fragmentTransaction.add(R.id.fragmentContainer, fragment)
         fragmentTransaction.commit()
     }
+
+
 }

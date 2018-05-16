@@ -1,10 +1,14 @@
 package hr.fer.camera.surf;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.widget.ImageView;
 
+import org.opencv.android.Utils;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
+import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -20,6 +24,7 @@ import org.opencv.features2d.FeatureDetector;
 import org.opencv.features2d.Features2d;
 import org.opencv.features2d.KeyPoint;
 import org.opencv.highgui.Highgui;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -33,18 +38,28 @@ public class SURF implements Serializable {
         System.loadLibrary("nonfree");
     }
 
+
+    public SURF() {
+    }
+
     private ImageView imageView;
     private Bitmap inputImage; // make bitmap from image resource
 
-    public static final String bookObject = "images//bookobject.jpg";
-    public static final String bookScene = "images//bookscene.jpg";
+    public void detect(List<Bitmap> bitmaps) {
 
-
-    public static void SURFImpl() {
         System.out.println("Started....");
         System.out.println("Loading images...");
-        Mat objectImage = Highgui.imread(bookObject, Highgui.CV_LOAD_IMAGE_COLOR);
-        Mat sceneImage = Highgui.imread(bookScene, Highgui.CV_LOAD_IMAGE_COLOR);
+
+
+        Mat objectImage = new Mat();
+        Utils.bitmapToMat(bitmaps.get(0), objectImage);
+
+        Mat sceneImage = new Mat();
+        Utils.bitmapToMat(bitmaps.get(1), sceneImage);
+
+        Imgproc.cvtColor(objectImage, objectImage, Imgproc.COLOR_RGBA2GRAY);
+        Imgproc.cvtColor(sceneImage, sceneImage, Imgproc.COLOR_RGBA2GRAY);
+
 
         MatOfKeyPoint objectKeyPoints = new MatOfKeyPoint();
         FeatureDetector featureDetector = FeatureDetector.create(FeatureDetector.SURF);
@@ -130,12 +145,15 @@ public class SURF implements Serializable {
             System.out.println("Transforming object corners to scene corners...");
             Core.perspectiveTransform(obj_corners, scene_corners, homography);
 
-            Mat img = Highgui.imread(bookScene, Highgui.CV_LOAD_IMAGE_COLOR);
 
-            Core.line(img, new Point(scene_corners.get(0, 0)), new Point(scene_corners.get(1, 0)), new Scalar(0, 255, 0), 4);
-            Core.line(img, new Point(scene_corners.get(1, 0)), new Point(scene_corners.get(2, 0)), new Scalar(0, 255, 0), 4);
-            Core.line(img, new Point(scene_corners.get(2, 0)), new Point(scene_corners.get(3, 0)), new Scalar(0, 255, 0), 4);
-            Core.line(img, new Point(scene_corners.get(3, 0)), new Point(scene_corners.get(0, 0)), new Scalar(0, 255, 0), 4);
+
+            Mat img = new Mat();
+            Utils.bitmapToMat(bitmaps.get(1), img);
+
+            Core.line(img, new Point(scene_corners.get(0, 0)), new Point(scene_corners.get(1, 0)), new Scalar(0, 255, 255), 10);
+            Core.line(img, new Point(scene_corners.get(1, 0)), new Point(scene_corners.get(2, 0)), new Scalar(0, 255, 255), 10);
+            Core.line(img, new Point(scene_corners.get(2, 0)), new Point(scene_corners.get(3, 0)), new Scalar(0, 255, 255), 10);
+            Core.line(img, new Point(scene_corners.get(3, 0)), new Point(scene_corners.get(0, 0)), new Scalar(0, 255, 255), 10);
 
             System.out.println("Drawing matches image...");
             MatOfDMatch goodMatches = new MatOfDMatch();
@@ -143,11 +161,25 @@ public class SURF implements Serializable {
 
             Features2d.drawMatches(objectImage, objectKeyPoints, sceneImage, sceneKeyPoints, goodMatches, matchoutput, matchestColor, newKeypointColor, new MatOfByte(), 2);
 
-            Highgui.imwrite("output//outputImage.jpg", outputImage);
-            Highgui.imwrite("output//matchoutput.jpg", matchoutput);
-            Highgui.imwrite("output//img.jpg", img);
+            Highgui.imwrite("outputImage.jpg", outputImage);
+            Highgui.imwrite("matchoutput.jpg", matchoutput);
+            Highgui.imwrite("img.jpg", img);
+
+            convertOutputToBitmap(img);
 
         }
     }
 
+
+    void convertOutputToBitmap(Mat img){
+        Bitmap bmp;
+        try {
+            //Imgproc.cvtColor(img, img, Imgproc.COLOR_GRAY2RGBA);
+            bmp = Bitmap.createBitmap(img.cols(), img.rows(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(img, bmp);
+        } catch (CvException e){
+            Log.e("Exception", e.getLocalizedMessage());
+        }
+
+    }
 }
