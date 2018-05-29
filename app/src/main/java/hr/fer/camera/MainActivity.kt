@@ -50,8 +50,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getLocalAssets(): List<Bitmap> {
-        val bookObject = BitmapFactory.decodeStream(BufferedInputStream(assets.open("bookobject.jpg")))
-        val bookScene = BitmapFactory.decodeStream(BufferedInputStream(assets.open("bookscene.jpg")))
+        val bookObject = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo_golo.jpg")))
+        val bookScene = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo2.jpg")))
         return listOf(bookObject, bookScene)
     }
 

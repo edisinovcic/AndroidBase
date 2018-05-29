@@ -42,59 +42,154 @@ public class SURF implements Serializable {
     }
 
     private ImageView imageView;
-    private Bitmap inputImage; // make bitmap from image resource
+    private Bitmap inputImage;
+
 
     public void detect(List<Bitmap> bitmaps) {
+
+        FeatureDetector featureDetector = FeatureDetector.create(FeatureDetector.SURF);
+        DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF);
+        DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
+        Mat objectImage = new Mat();
+        Mat sceneImage = new Mat();
+        Mat outputImageFromObjectImage = new Mat(objectImage.rows(), objectImage.cols(), Highgui.CV_LOAD_IMAGE_COLOR);
+        Mat outputImageFromSceneImage = new Mat(objectImage.rows(), objectImage.cols(), Highgui.CV_LOAD_IMAGE_COLOR);
+        Scalar newKeypointColor = new Scalar(0, 0, 255);
+        Scalar matchestColor = new Scalar(0, 255, 0);
+        LinkedList<Point> objectPoints = new LinkedList<>();
+        LinkedList<Point> scenePoints = new LinkedList<>();
+        MatOfPoint2f objMatOfPoint2f = new MatOfPoint2f();
+        MatOfPoint2f scnMatOfPoint2f = new MatOfPoint2f();
+
 
         System.out.println("Started....");
         System.out.println("Loading images...");
 
-
-        Mat objectImage = new Mat();
         Utils.bitmapToMat(bitmaps.get(0), objectImage);
-
-        Mat sceneImage = new Mat();
         Utils.bitmapToMat(bitmaps.get(1), sceneImage);
-
         Imgproc.cvtColor(objectImage, objectImage, Imgproc.COLOR_RGBA2GRAY);
         Imgproc.cvtColor(sceneImage, sceneImage, Imgproc.COLOR_RGBA2GRAY);
 
-
-        MatOfKeyPoint objectKeyPoints = new MatOfKeyPoint();
-        FeatureDetector featureDetector = FeatureDetector.create(FeatureDetector.SURF);
-        System.out.println("Detecting key points...");
-        featureDetector.detect(objectImage, objectKeyPoints);
-        KeyPoint[] keypoints = objectKeyPoints.toArray();
-        System.out.println(Arrays.toString(keypoints));
-
-        MatOfKeyPoint objectDescriptors = new MatOfKeyPoint();
-        DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF);
-        System.out.println("Computing descriptors...");
-        descriptorExtractor.compute(objectImage, objectKeyPoints, objectDescriptors);
-
-        // Create the matrix for output image.
         Mat outputImage = new Mat(objectImage.rows(), objectImage.cols(), Highgui.CV_LOAD_IMAGE_COLOR);
-        Scalar newKeypointColor = new Scalar(255, 0, 0);
 
-        System.out.println("Drawing key points on object image...");
-        Features2d.drawKeypoints(objectImage, objectKeyPoints, outputImage, newKeypointColor, 0);
+        MatOfKeyPoint objectKeyPoints = detectKeyPointsOnImage(objectImage, featureDetector);
+        MatOfKeyPoint objectDescriptors = detectObjectDescriptors(objectImage, objectKeyPoints, descriptorExtractor);
 
-        // Match object image with the scene image
-        MatOfKeyPoint sceneKeyPoints = new MatOfKeyPoint();
-        MatOfKeyPoint sceneDescriptors = new MatOfKeyPoint();
-        System.out.println("Detecting key points in background image...");
-        featureDetector.detect(sceneImage, sceneKeyPoints);
-        System.out.println("Computing descriptors in background image...");
-        descriptorExtractor.compute(sceneImage, sceneKeyPoints, sceneDescriptors);
+        drawKeyPointsOnImage(objectImage, objectKeyPoints, outputImageFromObjectImage, newKeypointColor);
+        drawKeyPointsOnImage(objectImage, objectKeyPoints, outputImage, newKeypointColor);
+
+        MatOfKeyPoint sceneKeyPoints = detectSceneKeyPoints(featureDetector, sceneImage);
+        MatOfKeyPoint sceneDescriptors = detectSceneDescriptors(featureDetector, descriptorExtractor, sceneImage, sceneKeyPoints);
+
+        drawKeyPointsOnImage(sceneImage, sceneKeyPoints, outputImageFromSceneImage, newKeypointColor);
+
 
         Mat matchoutput = new Mat(sceneImage.rows() * 2, sceneImage.cols() * 2, Highgui.CV_LOAD_IMAGE_COLOR);
-        Scalar matchestColor = new Scalar(0, 255, 0);
 
+        List<MatOfDMatch> matches = matchObjectAndSceneImage(descriptorMatcher, objectDescriptors, sceneDescriptors);
+        LinkedList<DMatch> goodMatchesList = calculateGoodMatchesList(matches);
+
+
+        if (!checkIfObjectIsFound(goodMatchesList)) {
+            return; //if there are no good matches return (because nothing has been found
+        }
+
+        //------------------------------------------------------------------
+
+        List<KeyPoint> objKeypointlist = objectKeyPoints.toList();
+        List<KeyPoint> scnKeypointlist = sceneKeyPoints.toList();
+
+        for (int i = 0; i < goodMatchesList.size(); i++) {
+            objectPoints.addLast(objKeypointlist.get(goodMatchesList.get(i).queryIdx).pt);
+            scenePoints.addLast(scnKeypointlist.get(goodMatchesList.get(i).trainIdx).pt);
+        }
+
+        objMatOfPoint2f.fromList(objectPoints);
+        scnMatOfPoint2f.fromList(scenePoints);
+
+        Mat homography = Calib3d.findHomography(objMatOfPoint2f, scnMatOfPoint2f, Calib3d.RANSAC, 3);
+
+        Mat obj_corners = new Mat(4, 1, CvType.CV_32FC2);
+        Mat scene_corners = new Mat(4, 1, CvType.CV_32FC2);
+
+        obj_corners.put(0, 0, new double[]{0, 0});
+        obj_corners.put(1, 0, new double[]{objectImage.cols(), 0});
+        obj_corners.put(2, 0, new double[]{objectImage.cols(), objectImage.rows()});
+        obj_corners.put(3, 0, new double[]{0, objectImage.rows()});
+
+        System.out.println("Transforming object corners to scene corners...");
+        Core.perspectiveTransform(obj_corners, scene_corners, homography);
+
+
+        Mat img = new Mat();
+        Utils.bitmapToMat(bitmaps.get(1), img);
+
+        Core.line(img, new Point(scene_corners.get(0, 0)), new Point(scene_corners.get(1, 0)), new Scalar(0, 255, 255), 10);
+        Core.line(img, new Point(scene_corners.get(1, 0)), new Point(scene_corners.get(2, 0)), new Scalar(0, 255, 255), 10);
+        Core.line(img, new Point(scene_corners.get(2, 0)), new Point(scene_corners.get(3, 0)), new Scalar(0, 255, 255), 10);
+        Core.line(img, new Point(scene_corners.get(3, 0)), new Point(scene_corners.get(0, 0)), new Scalar(0, 255, 255), 10);
+
+        System.out.println("Drawing matches image...");
+        MatOfDMatch goodMatches = new MatOfDMatch();
+        goodMatches.fromList(goodMatchesList);
+
+        Features2d.drawMatches(objectImage, objectKeyPoints, sceneImage, sceneKeyPoints, goodMatches, matchoutput, matchestColor, newKeypointColor, new MatOfByte(), 2);
+
+        Highgui.imwrite("outputImage.jpg", outputImage);
+        Highgui.imwrite("matchoutput.jpg", matchoutput);
+        Highgui.imwrite("img.jpg", img);
+
+        Bitmap endImage = convertOutputToBitmap(img);
+
+        System.out.println("Processing finished!");
+
+    }
+
+
+    private MatOfKeyPoint detectKeyPointsOnImage(Mat objectImage, FeatureDetector featureDetector) {
+        MatOfKeyPoint objectKeyPoints = new MatOfKeyPoint();
+        System.out.println("Detecting key points...");
+        featureDetector.detect(objectImage, objectKeyPoints);
+        System.out.println(Arrays.toString(objectKeyPoints.toArray()));
+        return objectKeyPoints;
+    }
+
+
+    private MatOfKeyPoint detectObjectDescriptors(Mat objectImage, MatOfKeyPoint objectKeyPoints, DescriptorExtractor descriptorExtractor) {
+        MatOfKeyPoint objectDescriptors = new MatOfKeyPoint();
+        System.out.println("Computing descriptors...");
+        descriptorExtractor.compute(objectImage, objectKeyPoints, objectDescriptors);
+        return objectDescriptors;
+    }
+
+    private MatOfKeyPoint detectSceneKeyPoints(FeatureDetector featureDetector, Mat sceneImage) {
+        MatOfKeyPoint sceneKeyPoints = new MatOfKeyPoint();
+        System.out.println("Detecting key points in background image...");
+        featureDetector.detect(sceneImage, sceneKeyPoints);
+        return sceneKeyPoints;
+    }
+
+
+    private MatOfKeyPoint detectSceneDescriptors(FeatureDetector featureDetector, DescriptorExtractor descriptorExtractor, Mat sceneImage, MatOfKeyPoint sceneKeyPoints) {
+        MatOfKeyPoint sceneDescriptors = new MatOfKeyPoint();
+        System.out.println("Computing descriptors in background image...");
+        descriptorExtractor.compute(sceneImage, sceneKeyPoints, sceneDescriptors);
+        return sceneDescriptors;
+    }
+
+    private List<MatOfDMatch> matchObjectAndSceneImage(DescriptorMatcher descriptorMatcher, MatOfKeyPoint objectDescriptors, MatOfKeyPoint sceneDescriptors) {
         List<MatOfDMatch> matches = new LinkedList<MatOfDMatch>();
-        DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
         System.out.println("Matching object and scene images...");
         descriptorMatcher.knnMatch(objectDescriptors, sceneDescriptors, matches, 2);
+        return matches;
+    }
 
+    private void drawKeyPointsOnImage(Mat objectImage, MatOfKeyPoint objectKeyPoints, Mat outputImage, Scalar newKeypointColor) {
+        System.out.println("Drawing key points on object image...");
+        Features2d.drawKeypoints(objectImage, objectKeyPoints, outputImage, newKeypointColor, 0);
+    }
+
+    private LinkedList<DMatch> calculateGoodMatchesList(List<MatOfDMatch> matches) {
         System.out.println("Calculating good match list...");
         LinkedList<DMatch> goodMatchesList = new LinkedList<DMatch>();
 
@@ -112,73 +207,28 @@ public class SURF implements Serializable {
             }
         }
 
-        if (goodMatchesList.size() >= 7) {
-            System.out.println("Object Found!!!");
-
-            List<KeyPoint> objKeypointlist = objectKeyPoints.toList();
-            List<KeyPoint> scnKeypointlist = sceneKeyPoints.toList();
-
-            LinkedList<Point> objectPoints = new LinkedList<>();
-            LinkedList<Point> scenePoints = new LinkedList<>();
-
-            for (int i = 0; i < goodMatchesList.size(); i++) {
-                objectPoints.addLast(objKeypointlist.get(goodMatchesList.get(i).queryIdx).pt);
-                scenePoints.addLast(scnKeypointlist.get(goodMatchesList.get(i).trainIdx).pt);
-            }
-
-            MatOfPoint2f objMatOfPoint2f = new MatOfPoint2f();
-            objMatOfPoint2f.fromList(objectPoints);
-            MatOfPoint2f scnMatOfPoint2f = new MatOfPoint2f();
-            scnMatOfPoint2f.fromList(scenePoints);
-
-            Mat homography = Calib3d.findHomography(objMatOfPoint2f, scnMatOfPoint2f, Calib3d.RANSAC, 3);
-
-            Mat obj_corners = new Mat(4, 1, CvType.CV_32FC2);
-            Mat scene_corners = new Mat(4, 1, CvType.CV_32FC2);
-
-            obj_corners.put(0, 0, new double[]{0, 0});
-            obj_corners.put(1, 0, new double[]{objectImage.cols(), 0});
-            obj_corners.put(2, 0, new double[]{objectImage.cols(), objectImage.rows()});
-            obj_corners.put(3, 0, new double[]{0, objectImage.rows()});
-
-            System.out.println("Transforming object corners to scene corners...");
-            Core.perspectiveTransform(obj_corners, scene_corners, homography);
-
-
-
-            Mat img = new Mat();
-            Utils.bitmapToMat(bitmaps.get(1), img);
-
-            Core.line(img, new Point(scene_corners.get(0, 0)), new Point(scene_corners.get(1, 0)), new Scalar(0, 255, 255), 10);
-            Core.line(img, new Point(scene_corners.get(1, 0)), new Point(scene_corners.get(2, 0)), new Scalar(0, 255, 255), 10);
-            Core.line(img, new Point(scene_corners.get(2, 0)), new Point(scene_corners.get(3, 0)), new Scalar(0, 255, 255), 10);
-            Core.line(img, new Point(scene_corners.get(3, 0)), new Point(scene_corners.get(0, 0)), new Scalar(0, 255, 255), 10);
-
-            System.out.println("Drawing matches image...");
-            MatOfDMatch goodMatches = new MatOfDMatch();
-            goodMatches.fromList(goodMatchesList);
-
-            Features2d.drawMatches(objectImage, objectKeyPoints, sceneImage, sceneKeyPoints, goodMatches, matchoutput, matchestColor, newKeypointColor, new MatOfByte(), 2);
-
-            Highgui.imwrite("outputImage.jpg", outputImage);
-            Highgui.imwrite("matchoutput.jpg", matchoutput);
-            Highgui.imwrite("img.jpg", img);
-
-            convertOutputToBitmap(img);
-
-        }
+        return goodMatchesList;
     }
 
+    private boolean checkIfObjectIsFound(LinkedList<DMatch> goodMatchesList) {
+        if (goodMatchesList.size() >= 4) {
+            System.out.println("Object Found!!!");
+            return true;
+        }
+        return false;
+    }
 
-    void convertOutputToBitmap(Mat img){
+    private Bitmap convertOutputToBitmap(Mat img) {
         Bitmap bmp;
         try {
             //Imgproc.cvtColor(img, img, Imgproc.COLOR_GRAY2RGBA);
             bmp = Bitmap.createBitmap(img.cols(), img.rows(), Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(img, bmp);
-        } catch (CvException e){
+            return bmp;
+        } catch (CvException e) {
             Log.e("Exception", e.getLocalizedMessage());
         }
+        return null;
 
     }
 }
