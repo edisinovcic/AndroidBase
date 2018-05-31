@@ -50,8 +50,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getLocalAssets(): List<Bitmap> {
-        val bookObject = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo_golo.jpg")))
-        val bookScene = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo2.jpg")))
+        val bookObject = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo_cropano.jpg")))
+        val bookScene = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo.jpg")))
         return listOf(bookObject, bookScene)
     }
 
@@ -67,7 +67,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun onButtonClicked(view: View) {
         Toast.makeText(this, "Button clicked", Toast.LENGTH_LONG).show()
-        //TODO: add behaviour for on button click
 
         SURF().detect(getLocalAssets())
 

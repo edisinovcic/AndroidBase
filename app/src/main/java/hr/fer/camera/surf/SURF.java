@@ -193,7 +193,7 @@ public class SURF implements Serializable {
         System.out.println("Calculating good match list...");
         LinkedList<DMatch> goodMatchesList = new LinkedList<DMatch>();
 
-        float nndrRatio = 0.7f;
+        float nndrRatio = 0.8f;
 
         for (int i = 0; i < matches.size(); i++) {
             MatOfDMatch matofDMatch = matches.get(i);
