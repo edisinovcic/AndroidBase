@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="4" by="lint 3.1.2">
+
+    <issue
+        id="LongLogTag"
+        severity="Error"
+        message="The logging tag can be at most 23 characters, was 31 (OpenCVLoader/BaseLoaderCallback)"
+        category="Correctness"
+        priority="5"
+        summary="Too Long Log Tags"
+        explanation="Log tags are only allowed to be at most 23 tag characters long."
+        errorLine1="                Log.e(TAG, &quot;Package installation failed!&quot;);"
+        errorLine2="                      ~~~">
+        <location
+            file="/home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/src/org/opencv/android/BaseLoaderCallback.java"
+            line="31"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="LongLogTag"
+        severity="Error"
+        message="The logging tag can be at most 23 characters, was 31 (OpenCVLoader/BaseLoaderCallback)"
+        category="Correctness"
+        priority="5"
+        summary="Too Long Log Tags"
+        explanation="Log tags are only allowed to be at most 23 tag characters long."
+        errorLine1="                Log.d(TAG, &quot;OpenCV library instalation was canceled by user&quot;);"
+        errorLine2="                      ~~~">
+        <location
+            file="/home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/src/org/opencv/android/BaseLoaderCallback.java"
+            line="46"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="LongLogTag"
+        severity="Error"
+        message="The logging tag can be at most 23 characters, was 31 (OpenCVLoader/BaseLoaderCallback)"
+        category="Correctness"
+        priority="5"
+        summary="Too Long Log Tags"
+        explanation="Log tags are only allowed to be at most 23 tag characters long."
+        errorLine1="                Log.d(TAG, &quot;OpenCV Manager Service is uncompatible with this app!&quot;);"
+        errorLine2="                      ~~~">
+        <location
+            file="/home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/src/org/opencv/android/BaseLoaderCallback.java"
+            line="52"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="LongLogTag"
+        severity="Error"
+        message="The logging tag can be at most 23 characters, was 31 (OpenCVLoader/BaseLoaderCallback)"
+        category="Correctness"
+        priority="5"
+        summary="Too Long Log Tags"
+        explanation="Log tags are only allowed to be at most 23 tag characters long."
+        errorLine1="                Log.e(TAG, &quot;OpenCV loading failed!&quot;);"
+        errorLine2="                      ~~~">
+        <location
+            file="/home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/src/org/opencv/android/BaseLoaderCallback.java"
+            line="67"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="GradleOverrides"
+        severity="Warning"
+        message="This `versionCode` value (`24100`) is not used; it is always overridden by the value specified in the Gradle build script (`2411`)"
+        category="Correctness"
+        priority="4"
+        summary="Value overridden by Gradle build script"
+        explanation="The value of (for example) `minSdkVersion` is only used if it is not specified in the `build.gradle` build scripts. When specified in the Gradle build scripts, the manifest value is ignored and can be misleading, so should be removed to avoid ambiguity."
+        errorLine1="      android:versionCode=&quot;24100&quot;"
+        errorLine2="      ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml"
+            line="4"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="GradleOverrides"
+        severity="Warning"
+        message="This `versionName` value (`2.4.10`) is not used; it is always overridden by the value specified in the Gradle build script (`2.4.11`)"
+        category="Correctness"
+        priority="4"
+        summary="Value overridden by Gradle build script"
+        explanation="The value of (for example) `minSdkVersion` is only used if it is not specified in the `build.gradle` build scripts. When specified in the Gradle build scripts, the manifest value is ignored and can be misleading, so should be removed to avoid ambiguity."
+        errorLine1="      android:versionName=&quot;2.4.10&quot;>"
+        errorLine2="      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml"
+            line="5"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="GradleOverrides"
+        severity="Warning"
+        message="This `minSdkVersion` value (`8`) is not used; it is always overridden by the value specified in the Gradle build script (`8`)"
+        category="Correctness"
+        priority="4"
+        summary="Value overridden by Gradle build script"
+        explanation="The value of (for example) `minSdkVersion` is only used if it is not specified in the `build.gradle` build scripts. When specified in the Gradle build scripts, the manifest value is ignored and can be misleading, so should be removed to avoid ambiguity."
+        errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;8&quot; />"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml"
+            line="7"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="UnsafeDynamicallyLoadedCode"
+        severity="Warning"
+        message="Dynamically loading code using `load` is risky, please use `loadLibrary` instead when possible"
+        category="Security"
+        priority="4"
+        summary="`load` used to dynamically load code"
+        explanation="Dynamically loading code from locations other than the application&apos;s library directory or the Android platform&apos;s built-in library directories is dangerous, as there is an increased risk that the code could have been tampered with. Applications should use `loadLibrary` when possible, which provides increased assurance that libraries are loaded from one of these safer locations. Application developers should use the features of their development environment to place application native libraries into the lib directory of their compiled APKs."
+        errorLine1="            System.load(AbsPath);"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/src/org/opencv/android/AsyncServiceHelper.java"
+            line="346"
+            column="13"/>
+    </issue>
+
+</issues>
