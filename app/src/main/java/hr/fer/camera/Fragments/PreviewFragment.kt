@@ -2,14 +2,18 @@ package hr.fer.camera.Fragments
 
 import android.Manifest
 import android.content.Context
+import android.graphics.PixelFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
+import android.media.Image
+import android.media.ImageReader
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.support.v4.app.Fragment
 import android.util.Log
 import android.view.*
+import android.widget.Toast
 import hr.fer.camera.R
 import kotlinx.android.synthetic.main.fragment_preview.*
 import pub.devrel.easypermissions.AfterPermissionGranted
@@ -18,10 +22,43 @@ import java.util.*
 
 class PreviewFragment : Fragment() {
 
-    private val MAX_PREVIEW_WIDTH = 1280
-    private val MAX_PREVIEW_HEIGHT = 720
-    private lateinit var captureSession: CameraCaptureSession
-    private lateinit var captureRequestBuilder: CaptureRequest.Builder
+
+    companion object {
+        const val REQUEST_CAMERA_PERMISSION = 100
+        private val TAG = PreviewFragment::class.qualifiedName
+        @JvmStatic
+        fun newInstance() = PreviewFragment()
+    }
+
+    val MAX_PREVIEW_WIDTH = 1280
+    val MAX_PREVIEW_HEIGHT = 720
+    lateinit var captureSession: CameraCaptureSession
+    lateinit var captureRequestBuilder: CaptureRequest.Builder
+    var imageReader: ImageReader? = null
+    lateinit var latestImage: Image
+    var isCapturing = false
+
+
+    private val onImageAvailableListener = ImageReader.OnImageAvailableListener {
+        latestImage = it.acquireLatestImage()
+        isCapturing = false
+    }
+
+    private val captureCallback = object : CameraCaptureSession.CaptureCallback() {
+
+        override fun onCaptureCompleted(session: CameraCaptureSession?, request: CaptureRequest?, result: TotalCaptureResult?) {
+            Toast.makeText(context, "Image captured!", Toast.LENGTH_LONG).show()
+
+            captureSession.apply {
+                stopRepeating()
+                abortCaptures()
+                capture(captureRequestBuilder.build(), null, null)
+                previewSession()
+            }
+
+        }
+    }
+
 
     private lateinit var cameraDevice: CameraDevice
     private val deviceStateCallback = object : CameraDevice.StateCallback() {
@@ -52,7 +89,7 @@ class PreviewFragment : Fragment() {
         activity?.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     }
 
-    private fun previewSession() {
+    fun previewSession() {
         val surfaceTexture = previewTextureView.surfaceTexture
         surfaceTexture.setDefaultBufferSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT)
         val surface = Surface(surfaceTexture)
@@ -74,8 +111,50 @@ class PreviewFragment : Fragment() {
                         }
                     }
 
-                }, null)
+                }, backgroundHandler)
     }
+
+    private fun setupCaptureSession() {
+        imageReader = ImageReader.newInstance(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT, PixelFormat.RGBA_8888, 2).apply {
+            setOnImageAvailableListener(onImageAvailableListener, backgroundHandler)
+        }
+    }
+
+    fun captureImageSession() {
+
+        setupCaptureSession()
+
+        val surfaceTexture = previewTextureView.surfaceTexture
+        surfaceTexture.setDefaultBufferSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT)
+        val textureSurface = Surface(surfaceTexture)
+        val imageSurface = imageReader?.surface
+
+        val surfaces = ArrayList<Surface?>().apply {
+            add(textureSurface)
+            add(imageSurface)
+        }
+
+        captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+        captureRequestBuilder.addTarget(textureSurface)
+        captureRequestBuilder.addTarget(imageSurface)
+
+        cameraDevice.createCaptureSession(surfaces,
+                object : CameraCaptureSession.StateCallback() {
+                    override fun onConfigureFailed(session: CameraCaptureSession?) {
+                        Log.e(TAG, "Creating capture session failed!")
+                    }
+
+                    override fun onConfigured(session: CameraCaptureSession?) {
+                        if (session != null) {
+                            captureSession = session
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                            captureSession.setRepeatingRequest(captureRequestBuilder.build(), captureCallback, null)
+                        }
+                    }
+
+                }, backgroundHandler)
+    }
+
 
     private fun closeCamera() {
         if (this::captureSession.isInitialized)
@@ -85,7 +164,7 @@ class PreviewFragment : Fragment() {
     }
 
     private fun startBackgroundThread() {
-        backgroundThread = HandlerThread("Camara2 Kotlin").also { it.start() }
+        backgroundThread = HandlerThread("Camera thread").also { it.start() }
         backgroundHandler = Handler(backgroundThread.looper)
     }
 
@@ -128,13 +207,6 @@ class PreviewFragment : Fragment() {
         } catch (e: InterruptedException) {
             Log.e(TAG, "Open camera device interrupted while opened")
         }
-    }
-
-    companion object {
-        const val REQUEST_CAMERA_PERMISSION = 100
-        private val TAG = PreviewFragment::class.qualifiedName
-        @JvmStatic
-        fun newInstance() = PreviewFragment()
     }
 
     private val surfaceListener = object : TextureView.SurfaceTextureListener {

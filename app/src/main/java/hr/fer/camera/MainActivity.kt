@@ -1,9 +1,9 @@
 package hr.fer.camera
 
 import android.content.res.Configuration
-import android.content.res.Resources.getSystem
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.Image
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.view.GravityCompat
@@ -17,12 +17,14 @@ import hr.fer.camera.Fragments.PreviewFragment
 import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.BufferedInputStream
-import org.opencv.highgui.Highgui
-import org.opencv.core.Mat
+import android.R.attr.bitmap
+
 
 
 
 class MainActivity : AppCompatActivity() {
+
+    lateinit var fragment: PreviewFragment
 
     val drawerToogle by lazy {
         ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close)
@@ -43,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         drawerLayout.addDrawerListener(drawerToogle)
 
 
-        val fragment = PreviewFragment.newInstance()
+        fragment = PreviewFragment.newInstance()
         addFragment(fragment)
 
 
@@ -68,16 +70,43 @@ class MainActivity : AppCompatActivity() {
     private fun onButtonClicked(view: View) {
         Toast.makeText(this, "Button clicked", Toast.LENGTH_LONG).show()
 
-        SURF().detect(getLocalAssets())
+        if (!fragment.isCapturing) {
+            fragment.isCapturing = true
+            fragment.captureImageSession()
+            while (fragment.isCapturing) {
+                //Wait for capture to be completed
+            }
+            convertImageToBitmap(fragment.latestImage)
+            SURF().detect(getLocalAssets())
+            return
+        }
 
+        fragment.isCapturing = false
+        fragment.previewSession()
+    }
 
+    private fun convertImageToBitmap(image: Image): Bitmap {
+        val planes = image.planes
+        val buffer = planes[0].buffer
+        val offset = 0
+        val pixelStride = planes[0].pixelStride
+        val rowStride = planes[0].rowStride
+        val rowPadding = rowStride - pixelStride * fragment.MAX_PREVIEW_WIDTH
+        // create bitmap
+
+        var bitmap = Bitmap.createBitmap(fragment.MAX_PREVIEW_WIDTH + rowPadding / pixelStride, fragment.MAX_PREVIEW_HEIGHT, Bitmap.Config.ARGB_8888)
+        bitmap.copyPixelsFromBuffer(buffer)
+
+        image.close()
+
+        return bitmap
 
     }
 
     private fun selectDrawerItem(item: MenuItem) {
         var fragment: Fragment? = null
 
-//        val fragmentClass = TODO("Will be implemented later")
+        //val fragmentClass = TODO("Will be implemented later")
         Toast.makeText(this, "Menu clicked", Toast.LENGTH_LONG).show()
         drawerLayout.closeDrawer(GravityCompat.START)
     }
