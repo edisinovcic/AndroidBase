@@ -30,6 +30,7 @@ class PreviewFragment : Fragment() {
         fun newInstance() = PreviewFragment()
     }
 
+    private var sensorOrientation = 0
     val MAX_PREVIEW_WIDTH = 1280
     val MAX_PREVIEW_HEIGHT = 720
     lateinit var captureSession: CameraCaptureSession
@@ -115,9 +116,14 @@ class PreviewFragment : Fragment() {
     }
 
     private fun setupCaptureSession() {
+        //val rotation = activity?.windowManager?.defaultDisplay?.rotation
+
+
         imageReader = ImageReader.newInstance(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT, PixelFormat.RGBA_8888, 2).apply {
             setOnImageAvailableListener(onImageAvailableListener, backgroundHandler)
         }
+
+
     }
 
     fun captureImageSession() {
@@ -276,4 +282,27 @@ class PreviewFragment : Fragment() {
                 View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
     }
+
+
+    private fun areDimensionsSwapped(displayRotation: Int): Boolean {
+        var swappedDimensions = false
+        when (displayRotation) {
+            Surface.ROTATION_0, Surface.ROTATION_180 -> {
+                if (sensorOrientation == 90 || sensorOrientation == 270) {
+                    swappedDimensions = true
+                }
+            }
+            Surface.ROTATION_90, Surface.ROTATION_270 -> {
+                if (sensorOrientation == 0 || sensorOrientation == 180) {
+                    swappedDimensions = true
+                }
+            }
+            else -> {
+                Log.e(TAG, "Display rotation is invalid: $displayRotation")
+            }
+        }
+        return swappedDimensions
+    }
+
+
 }

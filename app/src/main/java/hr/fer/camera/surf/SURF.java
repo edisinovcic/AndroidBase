@@ -45,7 +45,7 @@ public class SURF implements Serializable {
     private Bitmap inputImage;
 
 
-    public void detect(List<Bitmap> bitmaps) {
+    public boolean detect(List<Bitmap> bitmaps) {
 
         FeatureDetector featureDetector = FeatureDetector.create(FeatureDetector.SURF);
         DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF);
@@ -91,7 +91,7 @@ public class SURF implements Serializable {
 
 
         if (!checkIfObjectIsFound(goodMatchesList)) {
-            return; //if there are no good matches return (because nothing has been found
+            return false; //if there are no good matches return (because nothing has been found
         }
 
         //------------------------------------------------------------------
@@ -143,6 +143,8 @@ public class SURF implements Serializable {
 
         System.out.println("Processing finished!");
 
+        return true;
+
     }
 
 
@@ -193,7 +195,7 @@ public class SURF implements Serializable {
         System.out.println("Calculating good match list...");
         LinkedList<DMatch> goodMatchesList = new LinkedList<DMatch>();
 
-        float nndrRatio = 0.8f;
+        float nndrRatio = 0.7f;
 
         for (int i = 0; i < matches.size(); i++) {
             MatOfDMatch matofDMatch = matches.get(i);
@@ -211,7 +213,7 @@ public class SURF implements Serializable {
     }
 
     private boolean checkIfObjectIsFound(LinkedList<DMatch> goodMatchesList) {
-        if (goodMatchesList.size() >= 4) {
+        if (goodMatchesList.size() >= 7) {
             System.out.println("Object Found!!!");
             return true;
         }

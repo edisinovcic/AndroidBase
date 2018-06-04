@@ -3,6 +3,7 @@ package hr.fer.camera
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.media.Image
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -17,9 +18,6 @@ import hr.fer.camera.Fragments.PreviewFragment
 import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.BufferedInputStream
-import android.R.attr.bitmap
-
-
 
 
 class MainActivity : AppCompatActivity() {
@@ -43,7 +41,6 @@ class MainActivity : AppCompatActivity() {
             onButtonClicked(it)
         }
         drawerLayout.addDrawerListener(drawerToogle)
-
 
         fragment = PreviewFragment.newInstance()
         addFragment(fragment)
@@ -76,8 +73,8 @@ class MainActivity : AppCompatActivity() {
             while (fragment.isCapturing) {
                 //Wait for capture to be completed
             }
-            convertImageToBitmap(fragment.latestImage)
-            SURF().detect(getLocalAssets())
+            val bitmap: Bitmap = convertImageToBitmap(fragment.latestImage)
+            SURF().detect(arrayListOf(getLocalAssets().get(0), bitmap))
             return
         }
 
@@ -99,8 +96,8 @@ class MainActivity : AppCompatActivity() {
 
         image.close()
 
-        return bitmap
-
+        val rotation = 90.0
+        return rotateImage(bitmap, rotation.toFloat())
     }
 
     private fun selectDrawerItem(item: MenuItem) {
@@ -126,5 +123,12 @@ class MainActivity : AppCompatActivity() {
         fragmentTransaction.commit()
     }
 
+
+    fun rotateImage(source: Bitmap, angle: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(angle)
+        return Bitmap.createBitmap(source, 0, 0, source.width, source.height,
+                matrix, true)
+    }
 
 }
