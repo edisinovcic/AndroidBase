@@ -70,8 +70,8 @@ class MainActivity : AppCompatActivity() {
         if (!fragment.isCapturing) {
             fragment.isCapturing = true
             fragment.captureImageSession()
-            while (fragment.isCapturing) {
-                //Wait for capture to be completed
+            if (fragment.isCapturing) {
+               Thread.sleep(1000) //Wait for capture to be completed
             }
             val bitmap: Bitmap = convertImageToBitmap(fragment.latestImage)
             SURF().detect(arrayListOf(getLocalAssets().get(0), bitmap))
@@ -81,6 +81,7 @@ class MainActivity : AppCompatActivity() {
         fragment.isCapturing = false
         fragment.previewSession()
     }
+
 
     private fun convertImageToBitmap(image: Image): Bitmap {
         val planes = image.planes

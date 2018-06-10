@@ -3,8 +3,11 @@ package hr.fer.camera.Fragments
 import android.Manifest
 import android.content.Context
 import android.graphics.PixelFormat
+import android.graphics.Point
+import android.graphics.Rect
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
+import android.hardware.camera2.params.MeteringRectangle
 import android.media.Image
 import android.media.ImageReader
 import android.os.Bundle
@@ -30,6 +33,7 @@ class PreviewFragment : Fragment() {
         fun newInstance() = PreviewFragment()
     }
 
+    var point: Point = Point(0, 0)
     private var sensorOrientation = 0
     val MAX_PREVIEW_WIDTH = 1280
     val MAX_PREVIEW_HEIGHT = 720
@@ -161,6 +165,44 @@ class PreviewFragment : Fragment() {
                 }, backgroundHandler)
     }
 
+    fun focusSession() {
+        val surfaceTexture = previewTextureView.surfaceTexture
+        surfaceTexture.setDefaultBufferSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT)
+        val surface = Surface(surfaceTexture)
+
+        captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+        captureRequestBuilder.addTarget(surface)
+
+        cameraDevice.createCaptureSession(Arrays.asList(surface),
+                object : CameraCaptureSession.StateCallback() {
+                    override fun onConfigureFailed(session: CameraCaptureSession?) {
+                        Log.e(TAG, "creating capture session failded!")
+                    }
+
+                    override fun onConfigured(session: CameraCaptureSession?) {
+                        if (session != null) {
+                            captureSession = session
+
+                            //captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
+                            //captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+                            //captureSession.capture(captureRequestBuilder.build(), captureCallback, backgroundHandler)
+
+                            if (focusAreaTouch != null) {
+                                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, arrayOf(MeteringRectangle(focusAreaTouch?.rect, 2)))
+                                System.out.println("Focus area touch: " + focusAreaTouch.toString())
+                            }
+
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO)
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_START)
+                            Thread.sleep(500)
+                            captureSession.setRepeatingRequest(captureRequestBuilder.build(), captureCallback, backgroundHandler)
+                        }
+                    }
+
+                }, backgroundHandler)
+    }
+
 
     private fun closeCamera() {
         if (this::captureSession.isInitialized)
@@ -269,9 +311,22 @@ class PreviewFragment : Fragment() {
         checkCameraPermission()
     }
 
+    var actionMasked: Int = 0
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_preview, container, false)
+        val view: View = inflater.inflate(R.layout.fragment_preview, container, false)
+        view.setOnTouchListener { v, event ->
+            //If focus is triggered again but last was not finished
+            if (manualFocusEngaged) {
+                true
+            }
+
+            point.set(event.x.toInt(), event.y.toInt())
+            manualFocusEngaged = true
+            focusOnPoint()
+            true
+        }
+        return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -302,6 +357,35 @@ class PreviewFragment : Fragment() {
             }
         }
         return swappedDimensions
+    }
+
+
+    //-------------------------------------------------
+    // For focus on touch area
+
+    var manualFocusEngaged: Boolean = false
+    var focusAreaTouch: MeteringRectangle? = null
+
+    private fun focusOnPoint() {
+        var rect: CameraCharacteristics.Key<Rect> = CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE
+        val halfTouchWidth = 100
+        val halfTouchHeight = 100
+        focusAreaTouch = MeteringRectangle(
+                Math.max(point.x - halfTouchWidth, 0),
+                Math.max(point.y - halfTouchHeight, 0),
+                halfTouchWidth * 2,
+                halfTouchHeight * 2,
+                MeteringRectangle.METERING_WEIGHT_MAX - 1
+        )
+
+        focusSession()
+
+        manualFocusEngaged = false
+    }
+
+
+    private fun drawRectangle(){
+
     }
 
 
