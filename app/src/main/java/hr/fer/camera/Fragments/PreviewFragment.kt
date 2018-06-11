@@ -2,10 +2,7 @@ package hr.fer.camera.Fragments
 
 import android.Manifest
 import android.content.Context
-import android.graphics.PixelFormat
-import android.graphics.Point
-import android.graphics.Rect
-import android.graphics.SurfaceTexture
+import android.graphics.*
 import android.hardware.camera2.*
 import android.hardware.camera2.params.MeteringRectangle
 import android.media.Image
@@ -17,11 +14,20 @@ import android.support.v4.app.Fragment
 import android.util.Log
 import android.view.*
 import android.widget.Toast
+import hr.fer.camera.Helpers
+import hr.fer.camera.MainActivity
+import hr.fer.camera.MainActivity.Companion.fragment
 import hr.fer.camera.R
+import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.fragment_preview.*
+import org.opencv.android.Utils
+import org.opencv.core.Core
+import org.opencv.core.Mat
+import org.opencv.core.Scalar
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
 import java.util.*
+import kotlin.collections.ArrayList
 
 class PreviewFragment : Fragment() {
 
@@ -165,15 +171,25 @@ class PreviewFragment : Fragment() {
                 }, backgroundHandler)
     }
 
+    /*
     fun focusSession() {
+
+        setupCaptureSession()
+
         val surfaceTexture = previewTextureView.surfaceTexture
         surfaceTexture.setDefaultBufferSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT)
-        val surface = Surface(surfaceTexture)
+        val textureSurface = Surface(surfaceTexture)
+        val imageSurface = imageReader?.surface
 
+        val surfaces = ArrayList<Surface?>().apply {
+            add(textureSurface)
+            add(imageSurface)
+        }
         captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
-        captureRequestBuilder.addTarget(surface)
+        captureRequestBuilder.addTarget(textureSurface)
+        captureRequestBuilder.addTarget(imageSurface)
 
-        cameraDevice.createCaptureSession(Arrays.asList(surface),
+        cameraDevice.createCaptureSession(surfaces,
                 object : CameraCaptureSession.StateCallback() {
                     override fun onConfigureFailed(session: CameraCaptureSession?) {
                         Log.e(TAG, "creating capture session failded!")
@@ -183,8 +199,8 @@ class PreviewFragment : Fragment() {
                         if (session != null) {
                             captureSession = session
 
-                            //captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
-                            //captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF)
                             //captureSession.capture(captureRequestBuilder.build(), captureCallback, backgroundHandler)
 
                             if (focusAreaTouch != null) {
@@ -202,6 +218,7 @@ class PreviewFragment : Fragment() {
 
                 }, backgroundHandler)
     }
+    */
 
 
     private fun closeCamera() {
@@ -311,7 +328,6 @@ class PreviewFragment : Fragment() {
         checkCameraPermission()
     }
 
-    var actionMasked: Int = 0
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view: View = inflater.inflate(R.layout.fragment_preview, container, false)
@@ -378,13 +394,55 @@ class PreviewFragment : Fragment() {
                 MeteringRectangle.METERING_WEIGHT_MAX - 1
         )
 
-        focusSession()
+        if (!fragment.isCapturing) {
+            fragment.isCapturing = true
+            fragment.captureImageSession()
+            if (fragment.isCapturing) {
+                Thread.sleep(1000) //Wait for capture to be completed
+            }
+            val bitmap: Bitmap = Helpers.convertImageToBitmap(MainActivity.fragment)
+            if (SURF().detect(arrayListOf(MainActivity.assetList.get(0), bitmap))) {
+                var points = SURF.points
+                var coef = 0.75f
+                rectangle.visibility = View.VISIBLE
+                rectangle.top = ((points.get(0).y + points.get(1).y)*coef).toInt()
+                rectangle.right = ((points.get(2).x + points.get(3).x)*coef).toInt()
+                rectangle.bottom = ((points.get(4).y + points.get(5).y)*coef).toInt()
+                rectangle.left =  ((points.get(6).x + points.get(7).x)*coef).toInt()
+
+
+                val img = Mat()
+                Utils.bitmapToMat(bitmap, img)
+                Core.line(img, points.get(0), points.get(1), Scalar(0.0, 255.0, 255.0), 10)
+                Core.line(img, points.get(2), points.get(3), Scalar(0.0, 255.0, 255.0), 10)
+                Core.line(img, points.get(4), points.get(5), Scalar(0.0, 255.0, 255.0), 10)
+                Core.line(img, points.get(6), points.get(7), Scalar(0.0, 255.0, 255.0), 10)
+
+                val finalImage: Bitmap? = Helpers.convertOutputToBitmap(img)
+
+                return
+            }
+        }
 
         manualFocusEngaged = false
+
+        fragment.isCapturing = false
+        fragment.previewSession()
     }
 
 
-    private fun drawRectangle(){
+    private fun drawRectangle() {
+
+        /*
+       var canvas = Canvas()
+       //canvas.drawColor(0, PorterDuff.Mode.CLEAR)
+       var paint = Paint()
+       paint.style = Paint.Style.STROKE
+       paint.color = Color.WHITE
+       paint.strokeWidth = 3.0F
+       canvas.drawRect(0.0f, 10.0f, 200.0f, 300.0f, paint)
+       rectangle.draw(canvas)
+       */
 
     }
 

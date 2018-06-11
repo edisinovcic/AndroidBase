@@ -26,7 +26,9 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -41,12 +43,12 @@ public class SURF implements Serializable {
     public SURF() {
     }
 
+    public static List<Point> points = new ArrayList<>();
     private ImageView imageView;
     private Bitmap inputImage;
 
 
     public boolean detect(List<Bitmap> bitmaps) {
-
         FeatureDetector featureDetector = FeatureDetector.create(FeatureDetector.SURF);
         DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF);
         DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
@@ -124,6 +126,17 @@ public class SURF implements Serializable {
         Mat img = new Mat();
         Utils.bitmapToMat(bitmaps.get(1), img);
 
+        points = new ArrayList<>();
+        points.add(new Point(scene_corners.get(0, 0)));
+        points.add(new Point(scene_corners.get(1, 0)));
+        points.add(new Point(scene_corners.get(1, 0)));
+        points.add(new Point(scene_corners.get(2, 0)));
+        points.add(new Point(scene_corners.get(2, 0)));
+        points.add(new Point(scene_corners.get(3, 0)));
+        points.add(new Point(scene_corners.get(3, 0)));
+        points.add(new Point(scene_corners.get(0, 0)));
+
+
         Core.line(img, new Point(scene_corners.get(0, 0)), new Point(scene_corners.get(1, 0)), new Scalar(0, 255, 255), 10);
         Core.line(img, new Point(scene_corners.get(1, 0)), new Point(scene_corners.get(2, 0)), new Scalar(0, 255, 255), 10);
         Core.line(img, new Point(scene_corners.get(2, 0)), new Point(scene_corners.get(3, 0)), new Scalar(0, 255, 255), 10);
@@ -139,7 +152,9 @@ public class SURF implements Serializable {
         Highgui.imwrite("matchoutput.jpg", matchoutput);
         Highgui.imwrite("img.jpg", img);
 
-        Bitmap endImage = convertOutputToBitmap(img);
+        Bitmap endBitmap = convertOutputToBitmap(img);
+        Bitmap outputBitmap = convertOutputToBitmap(outputImage);
+        Bitmap sceneBitmap = convertOutputToBitmap(sceneImage);
 
         System.out.println("Processing finished!");
 

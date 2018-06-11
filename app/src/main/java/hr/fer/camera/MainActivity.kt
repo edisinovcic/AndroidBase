@@ -22,7 +22,10 @@ import java.io.BufferedInputStream
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var fragment: PreviewFragment
+    companion object {
+        lateinit var fragment: PreviewFragment
+        lateinit var assetList: List<Bitmap>
+    }
 
     val drawerToogle by lazy {
         ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close)
@@ -44,6 +47,8 @@ class MainActivity : AppCompatActivity() {
 
         fragment = PreviewFragment.newInstance()
         addFragment(fragment)
+
+        assetList = getLocalAssets()
 
 
     }
@@ -73,7 +78,7 @@ class MainActivity : AppCompatActivity() {
             if (fragment.isCapturing) {
                Thread.sleep(1000) //Wait for capture to be completed
             }
-            val bitmap: Bitmap = convertImageToBitmap(fragment.latestImage)
+            val bitmap: Bitmap = Helpers.convertImageToBitmap(fragment)
             SURF().detect(arrayListOf(getLocalAssets().get(0), bitmap))
             return
         }
@@ -83,23 +88,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun convertImageToBitmap(image: Image): Bitmap {
-        val planes = image.planes
-        val buffer = planes[0].buffer
-        val offset = 0
-        val pixelStride = planes[0].pixelStride
-        val rowStride = planes[0].rowStride
-        val rowPadding = rowStride - pixelStride * fragment.MAX_PREVIEW_WIDTH
-        // create bitmap
 
-        var bitmap = Bitmap.createBitmap(fragment.MAX_PREVIEW_WIDTH + rowPadding / pixelStride, fragment.MAX_PREVIEW_HEIGHT, Bitmap.Config.ARGB_8888)
-        bitmap.copyPixelsFromBuffer(buffer)
-
-        image.close()
-
-        val rotation = 90.0
-        return rotateImage(bitmap, rotation.toFloat())
-    }
 
     private fun selectDrawerItem(item: MenuItem) {
         var fragment: Fragment? = null
@@ -125,11 +114,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    fun rotateImage(source: Bitmap, angle: Float): Bitmap {
-        val matrix = Matrix()
-        matrix.postRotate(angle)
-        return Bitmap.createBitmap(source, 0, 0, source.width, source.height,
-                matrix, true)
-    }
+
 
 }
