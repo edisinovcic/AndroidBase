@@ -1,9 +1,10 @@
 package hr.fer.camera
 
 import android.content.res.Configuration
-import android.content.res.Resources.getSystem
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.Image
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.view.GravityCompat
@@ -17,12 +18,14 @@ import hr.fer.camera.Fragments.PreviewFragment
 import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.BufferedInputStream
-import org.opencv.highgui.Highgui
-import org.opencv.core.Mat
-
 
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        lateinit var fragment: PreviewFragment
+        lateinit var assetList: List<Bitmap>
+    }
 
     val drawerToogle by lazy {
         ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close)
@@ -42,9 +45,10 @@ class MainActivity : AppCompatActivity() {
         }
         drawerLayout.addDrawerListener(drawerToogle)
 
-
-        val fragment = PreviewFragment.newInstance()
+        fragment = PreviewFragment.newInstance()
         addFragment(fragment)
+
+        assetList = getLocalAssets()
 
 
     }
@@ -68,16 +72,28 @@ class MainActivity : AppCompatActivity() {
     private fun onButtonClicked(view: View) {
         Toast.makeText(this, "Button clicked", Toast.LENGTH_LONG).show()
 
-        SURF().detect(getLocalAssets())
+        if (!fragment.isCapturing) {
+            fragment.isCapturing = true
+            fragment.captureImageSession()
+            if (fragment.isCapturing) {
+               Thread.sleep(1000) //Wait for capture to be completed
+            }
+            val bitmap: Bitmap = Helpers.convertImageToBitmap(fragment)
+            SURF().detect(arrayListOf(getLocalAssets().get(0), bitmap))
+            return
+        }
 
-
-
+        fragment.isCapturing = false
+        fragment.previewSession()
     }
+
+
+
 
     private fun selectDrawerItem(item: MenuItem) {
         var fragment: Fragment? = null
 
-//        val fragmentClass = TODO("Will be implemented later")
+        //val fragmentClass = TODO("Will be implemented later")
         Toast.makeText(this, "Menu clicked", Toast.LENGTH_LONG).show()
         drawerLayout.closeDrawer(GravityCompat.START)
     }
@@ -96,6 +112,8 @@ class MainActivity : AppCompatActivity() {
         fragmentTransaction.add(R.id.fragmentContainer, fragment)
         fragmentTransaction.commit()
     }
+
+
 
 
 }
