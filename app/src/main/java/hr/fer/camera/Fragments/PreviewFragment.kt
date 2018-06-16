@@ -18,6 +18,7 @@ import hr.fer.camera.Helpers
 import hr.fer.camera.MainActivity
 import hr.fer.camera.MainActivity.Companion.fragment
 import hr.fer.camera.R
+import hr.fer.camera.R.id.previewTextureView
 import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.fragment_preview.*
 import org.opencv.android.Utils
@@ -405,10 +406,10 @@ class PreviewFragment : Fragment() {
                 var points = SURF.points
                 var coef = 0.75f
                 rectangle.visibility = View.VISIBLE
-                rectangle.top = ((points.get(0).y + points.get(1).y)*coef).toInt()
-                rectangle.right = ((points.get(2).x + points.get(3).x)*coef).toInt()
-                rectangle.bottom = ((points.get(4).y + points.get(5).y)*coef).toInt()
-                rectangle.left =  ((points.get(6).x + points.get(7).x)*coef).toInt()
+                rectangle.top = ((points.get(0).y + points.get(1).y) * coef).toInt()
+                rectangle.right = ((points.get(2).x + points.get(3).x) * coef).toInt()
+                rectangle.bottom = ((points.get(4).y + points.get(5).y) * coef).toInt()
+                rectangle.left = ((points.get(6).x + points.get(7).x) * coef).toInt()
 
 
                 val img = Mat()
