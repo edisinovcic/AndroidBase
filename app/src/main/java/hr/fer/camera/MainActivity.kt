@@ -1,11 +1,11 @@
 package hr.fer.camera
 
+import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.media.Image
 import android.os.Bundle
+import android.os.Environment.getExternalStorageDirectory
 import android.support.v4.app.Fragment
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
@@ -18,6 +18,8 @@ import hr.fer.camera.Fragments.PreviewFragment
 import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.BufferedInputStream
+import java.io.File
+import java.io.ObjectOutputStream
 
 
 class MainActivity : AppCompatActivity() {
@@ -54,9 +56,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getLocalAssets(): List<Bitmap> {
-        val bookObject = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo_cropano.jpg")))
-        val bookScene = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo.jpg")))
-        return listOf(bookObject, bookScene)
+        return listOf(
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo0_cropano.jpg"))),
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo1_cropano.jpg"))),
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo2_cropano.jpg"))),
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo3_cropano.jpg"))),
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo4_cropano.jpg")))
+        )
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -70,24 +76,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onButtonClicked(view: View) {
-        Toast.makeText(this, "Button clicked", Toast.LENGTH_LONG).show()
 
-        if (!fragment.isCapturing) {
-            fragment.isCapturing = true
-            fragment.captureImageSession()
-            if (fragment.isCapturing) {
-               Thread.sleep(1000) //Wait for capture to be completed
-            }
-            val bitmap: Bitmap = Helpers.convertImageToBitmap(fragment)
-            SURF().detect(arrayListOf(getLocalAssets().get(0), bitmap))
-            return
-        }
+        //Populate text file with descriptors
+        writeToFile()
+        Toast.makeText(this, "File populated", Toast.LENGTH_LONG).show()
 
-        fragment.isCapturing = false
-        fragment.previewSession()
+        readDescriptors()
     }
-
-
 
 
     private fun selectDrawerItem(item: MenuItem) {
@@ -113,7 +108,47 @@ class MainActivity : AppCompatActivity() {
         fragmentTransaction.commit()
     }
 
+    private fun writeToFile() {
+        writeToExternalStorage()
+    }
 
+    private fun writeToExternalStorage() {
+        val fileName = "descriptors.txt"
+        val root = File(getExternalStorageDirectory(), fileName)
+        if (!root.exists()) {
+            root.mkdirs()
+            root.createNewFile()
+        }
+
+
+        val fos = this.openFileOutput(fileName, Context.MODE_PRIVATE)
+        val os = ObjectOutputStream(fos)
+
+        val data = SURF().getAllObjectsKeypoints(getLocalAssets())
+
+        File(root.path).printWriter().use { out ->
+            data.forEach { matrix ->
+                matrix.toArray().forEach { keyPoint ->
+                    out.write(keyPoint.toString() + "\n")
+                }
+                out.write("--------------------------------------------------------------------------------------------------------------------\n")
+            }
+        }
+
+        os.close()
+        fos.close()
+    }
+
+    public fun readDescriptors() {
+        readFromExternalStorageFile(fileName = "descriptors.txt")
+    }
+
+    private fun readFromExternalStorageFile(fileName: String) {
+        var file = File(getExternalStorageDirectory(), fileName)
+        println("Reading descriptors")
+        file.forEachLine { println(it) }
+    }
 
 
 }
+

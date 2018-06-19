@@ -18,7 +18,6 @@ import hr.fer.camera.Helpers
 import hr.fer.camera.MainActivity
 import hr.fer.camera.MainActivity.Companion.fragment
 import hr.fer.camera.R
-import hr.fer.camera.R.id.previewTextureView
 import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.fragment_preview.*
 import org.opencv.android.Utils
@@ -35,6 +34,7 @@ class PreviewFragment : Fragment() {
 
     companion object {
         const val REQUEST_CAMERA_PERMISSION = 100
+        const val REQUEST_WRITE_STORAGE_REQUEST_CODE = 112
         private val TAG = PreviewFragment::class.qualifiedName
         @JvmStatic
         fun newInstance() = PreviewFragment()
@@ -306,6 +306,10 @@ class PreviewFragment : Fragment() {
                     REQUEST_CAMERA_PERMISSION,
                     Manifest.permission.CAMERA)
         }
+        EasyPermissions.requestPermissions(activity!!,
+                getString(R.string.abc_action_bar_home_description),
+                REQUEST_WRITE_STORAGE_REQUEST_CODE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
 
     override fun onResume() {
@@ -334,13 +338,16 @@ class PreviewFragment : Fragment() {
         val view: View = inflater.inflate(R.layout.fragment_preview, container, false)
         view.setOnTouchListener { v, event ->
             //If focus is triggered again but last was not finished
+
             if (manualFocusEngaged) {
                 true
             }
 
-            point.set(event.x.toInt(), event.y.toInt())
-            manualFocusEngaged = true
-            focusOnPoint()
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                point.set(event.x.toInt(), event.y.toInt())
+                manualFocusEngaged = true
+                focusOnPoint()
+            }
             true
         }
         return view
