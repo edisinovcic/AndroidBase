@@ -1,12 +1,12 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-8:12
+ADDED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-9:12
+INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-9:12
+INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-9:12
+INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-9:12
+INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-9:12
+INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-9:12
+INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:2:1-9:12
 	package
 		ADDED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml:3:7-27
 		INJECTED from /home/edisinovcic/ProgrammingProjects/AndroidStudioProjects/DIPLOMSKI/AndroidBaseCopy/lib/opencv/AndroidManifest.xml

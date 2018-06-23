@@ -1,26 +1,27 @@
 package hr.fer.camera
 
 import android.annotation.TargetApi
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.media.Image
 import android.os.Build
+import android.preference.PreferenceManager
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import hr.fer.camera.Fragments.PreviewFragment
-import hr.fer.camera.surf.SURF
 import org.apache.commons.lang3.SerializationUtils
 import org.opencv.android.Utils
 import org.opencv.core.CvException
-import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfKeyPoint
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 class Helpers {
@@ -29,6 +30,9 @@ class Helpers {
 
         var fileInput = ArrayList<String>()
         var descriptorsFile: String = "descriptors.txt"
+
+        val objectKeyPointsKey: String = "objectsKeyPoints"
+        val objectDescriptionKey: String = "objectsDescriptors"
 
 
         fun convertImageToBitmap(fragment: PreviewFragment): Bitmap {
@@ -73,6 +77,7 @@ class Helpers {
 
         }
 
+        /*
         fun populateTextFileWithDescriptors(bitmaps: List<Bitmap>): MutableList<MatOfKeyPoint>? {
             var linesToWrite = SURF().getAllObjectsKeypoints(bitmaps)
             linesToWrite.forEach {
@@ -84,8 +89,9 @@ class Helpers {
             }
             return linesToWrite
         }
+        */
 
-
+        /*
         fun storeToFile(fileName: String, linesToWrite: MutableList<MatOfKeyPoint?>) {
             File(fileName).printWriter().use { out ->
                 linesToWrite.forEach { line ->
@@ -93,6 +99,7 @@ class Helpers {
                 }
             }
         }
+        */
 
         fun readAllFromFile(fileName: String) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -159,5 +166,57 @@ class Helpers {
         }
 
 
+        public fun writeObjectKeyToPreferences(context: Context, data: List<MatOfKeyPoint>, key: String) {
+            val mPrefs = PreferenceManager.getDefaultSharedPreferences(context)
+            val prefsEditor = mPrefs.edit()
+            val gson = Gson()
+            for ((i, matrix) in data.withIndex()) {
+                val json = gson.toJson(matrix)
+                prefsEditor.putString(key + i.toString(), json)
+            }
+            prefsEditor.apply()
+        }
+
+        public fun writeDescriptorsToPreferences(context: Context, data: List<MatOfKeyPoint>, key: String) {
+            val mPrefs = PreferenceManager.getDefaultSharedPreferences(context)
+            val prefsEditor = mPrefs.edit()
+            val gson = Gson()
+            for ((i, matrix) in data.withIndex()) {
+                val json = gson.toJson(matrix)
+                prefsEditor.putString(key + i.toString(), json)
+            }
+            prefsEditor.apply()
+        }
+
+        public fun readKeysFromPreferences(key: String, context: Context): LinkedList<MatOfKeyPoint> {
+            val mPrefs = PreferenceManager.getDefaultSharedPreferences(context)
+            val gson = Gson()
+            var data: LinkedList<MatOfKeyPoint> = LinkedList()
+            var i = 0
+            while (true){
+                val json = mPrefs.getString(key + i.toString(), "")
+                i++
+                val obj = gson.fromJson<MatOfKeyPoint>(json, MatOfKeyPoint::class.java)
+                if (obj == null) return data
+                data.add(obj)
+            }
+            return data
+        }
+
+        public fun readDescriptorsFromPreferences(key: String, context: Context): LinkedList<MatOfKeyPoint> {
+            val mPrefs = PreferenceManager.getDefaultSharedPreferences(context)
+            val gson = Gson()
+            var data: LinkedList<MatOfKeyPoint> = LinkedList()
+            var i = 0
+            while(true) {
+                val json = mPrefs.getString(key + i.toString(), "")
+                i++
+                val obj = gson.fromJson<MatOfKeyPoint>(json, MatOfKeyPoint::class.java)
+                if (obj == null) return data
+                data.add(obj)
+            }
+            return data
+
+        }
     }
 }

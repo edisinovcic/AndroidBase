@@ -15,11 +15,19 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import hr.fer.camera.Fragments.PreviewFragment
+import hr.fer.camera.Helpers.Companion.objectDescriptionKey
+import hr.fer.camera.Helpers.Companion.objectKeyPointsKey
+import hr.fer.camera.Helpers.Companion.readDescriptorsFromPreferences
+import hr.fer.camera.Helpers.Companion.readKeysFromPreferences
+import hr.fer.camera.Helpers.Companion.writeDescriptorsToPreferences
+import hr.fer.camera.Helpers.Companion.writeObjectKeyToPreferences
 import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.activity_main.*
+import org.opencv.core.MatOfKeyPoint
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.ObjectOutputStream
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -27,6 +35,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         lateinit var fragment: PreviewFragment
         lateinit var assetList: List<Bitmap>
+        lateinit var objectsKeyPoints: LinkedList<MatOfKeyPoint>
+        lateinit var objectsDescriptors: LinkedList<MatOfKeyPoint>
     }
 
     val drawerToogle by lazy {
@@ -51,17 +61,16 @@ class MainActivity : AppCompatActivity() {
         addFragment(fragment)
 
         assetList = getLocalAssets()
-
-
     }
 
     fun getLocalAssets(): List<Bitmap> {
         return listOf(
                 BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo0_cropano.jpg"))),
-                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo1_cropano.jpg"))),
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo1_cropano.jpg")))/*,
                 BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo2_cropano.jpg"))),
                 BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo3_cropano.jpg"))),
                 BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo4_cropano.jpg")))
+        */
         )
     }
 
@@ -75,13 +84,15 @@ class MainActivity : AppCompatActivity() {
         drawerToogle.onConfigurationChanged(newConfig)
     }
 
+
+
     private fun onButtonClicked(view: View) {
-
-        //Populate text file with descriptors
-        writeToFile()
-        Toast.makeText(this, "File populated", Toast.LENGTH_LONG).show()
-
-        readDescriptors()
+        objectsKeyPoints = SURF().getAllObjectsKeypoints(getLocalAssets())
+        objectsDescriptors = SURF().getAllObjectsDescriptors(getLocalAssets(), objectsKeyPoints)
+        writeObjectKeyToPreferences(this, objectsKeyPoints, objectKeyPointsKey)
+        writeDescriptorsToPreferences(this, objectsDescriptors, objectDescriptionKey)
+        objectsKeyPoints = readKeysFromPreferences(objectKeyPointsKey, this)
+        objectsDescriptors = readDescriptorsFromPreferences(objectDescriptionKey, this)
     }
 
 
@@ -138,17 +149,6 @@ class MainActivity : AppCompatActivity() {
         os.close()
         fos.close()
     }
-
-    public fun readDescriptors() {
-        readFromExternalStorageFile(fileName = "descriptors.txt")
-    }
-
-    private fun readFromExternalStorageFile(fileName: String) {
-        var file = File(getExternalStorageDirectory(), fileName)
-        println("Reading descriptors")
-        file.forEachLine { println(it) }
-    }
-
 
 }
 
