@@ -1,11 +1,12 @@
 package hr.fer.camera
 
+import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.media.Image
+import android.os.AsyncTask
 import android.os.Bundle
+import android.os.Environment.getExternalStorageDirectory
 import android.support.v4.app.Fragment
 import android.support.v4.view.GravityCompat
 import android.support.v7.app.ActionBarDrawerToggle
@@ -15,9 +16,19 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import hr.fer.camera.Fragments.PreviewFragment
+import hr.fer.camera.Helpers.Companion.objectDescriptionKey
+import hr.fer.camera.Helpers.Companion.objectKeyPointsKey
+import hr.fer.camera.Helpers.Companion.readDescriptorsFromPreferences
+import hr.fer.camera.Helpers.Companion.readKeysFromPreferences
+import hr.fer.camera.Helpers.Companion.writeDescriptorsToPreferences
+import hr.fer.camera.Helpers.Companion.writeObjectKeyToPreferences
 import hr.fer.camera.surf.SURF
 import kotlinx.android.synthetic.main.activity_main.*
+import org.opencv.core.MatOfKeyPoint
 import java.io.BufferedInputStream
+import java.io.File
+import java.io.ObjectOutputStream
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -25,6 +36,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         lateinit var fragment: PreviewFragment
         lateinit var assetList: List<Bitmap>
+        lateinit var objectsKeyPoints: LinkedList<MatOfKeyPoint>
+        lateinit var objectsDescriptors: LinkedList<MatOfKeyPoint>
     }
 
     val drawerToogle by lazy {
@@ -49,14 +62,17 @@ class MainActivity : AppCompatActivity() {
         addFragment(fragment)
 
         assetList = getLocalAssets()
-
-
     }
 
     fun getLocalAssets(): List<Bitmap> {
-        val bookObject = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo_cropano.jpg")))
-        val bookScene = BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo.jpg")))
-        return listOf(bookObject, bookScene)
+        return listOf(
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo0_cropano.jpg"))),
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo1_cropano.jpg")))/*,
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo2_cropano.jpg"))),
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo3_cropano.jpg"))),
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo4_cropano.jpg")))
+        */
+        )
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
@@ -69,25 +85,15 @@ class MainActivity : AppCompatActivity() {
         drawerToogle.onConfigurationChanged(newConfig)
     }
 
+
+
     private fun onButtonClicked(view: View) {
-        Toast.makeText(this, "Button clicked", Toast.LENGTH_LONG).show()
-
-        if (!fragment.isCapturing) {
-            fragment.isCapturing = true
-            fragment.captureImageSession()
-            if (fragment.isCapturing) {
-               Thread.sleep(1000) //Wait for capture to be completed
-            }
-            val bitmap: Bitmap = Helpers.convertImageToBitmap(fragment)
-            SURF().detect(arrayListOf(getLocalAssets().get(0), bitmap))
-            return
-        }
-
-        fragment.isCapturing = false
-        fragment.previewSession()
+        ComputeKeypointAndDescriptors().execute()
+        //objectsKeyPoints = SURF().getAllObjectsKeypoints(getLocalAssets())
+        //objectsDescriptors = SURF().getAllObjectsDescriptors(getLocalAssets(), objectsKeyPoints)
+        //objectsKeyPoints = readKeysFromPreferences(objectKeyPointsKey, this)
+        //objectsDescriptors = readDescriptorsFromPreferences(objectDescriptionKey, this)
     }
-
-
 
 
     private fun selectDrawerItem(item: MenuItem) {
@@ -113,7 +119,57 @@ class MainActivity : AppCompatActivity() {
         fragmentTransaction.commit()
     }
 
+    private fun writeToFile() {
+        writeToExternalStorage()
+    }
+
+    private fun writeToExternalStorage() {
+        val fileName = "descriptors.txt"
+        val root = File(getExternalStorageDirectory(), fileName)
+        if (!root.exists()) {
+            root.mkdirs()
+            root.createNewFile()
+        }
 
 
+        val fos = this.openFileOutput(fileName, Context.MODE_PRIVATE)
+        val os = ObjectOutputStream(fos)
+
+        val data = SURF().getAllObjectsKeypoints(getLocalAssets())
+
+        File(root.path).printWriter().use { out ->
+            data.forEach { matrix ->
+                matrix.toArray().forEach { keyPoint ->
+                    out.write(keyPoint.toString() + "\n")
+                }
+                out.write("--------------------------------------------------------------------------------------------------------------------\n")
+            }
+        }
+
+        os.close()
+        fos.close()
+    }
+
+
+    private inner class ComputeKeypointAndDescriptors : AsyncTask<String, Int, String>() {
+        override fun onPreExecute() {
+            super.onPreExecute()
+            println("Started computing keypoints and descriptors")
+        }
+
+        override fun doInBackground(vararg params: String): String {
+            objectsKeyPoints = SURF().getAllObjectsKeypoints(getLocalAssets())
+            objectsDescriptors = SURF().getAllObjectsDescriptors(getLocalAssets(), objectsKeyPoints)
+            return "All Done!"
+        }
+
+        override fun onPostExecute(result: String) {
+            super.onPostExecute(result)
+            writeObjectKeyToPreferences(applicationContext, objectsKeyPoints, objectKeyPointsKey)
+            writeDescriptorsToPreferences(applicationContext, objectsDescriptors, objectDescriptionKey)
+            Toast.makeText(applicationContext, "Keypoints and deescriptors for counter have been calculated!", Toast.LENGTH_LONG).show()
+        }
+    }
 
 }
+
