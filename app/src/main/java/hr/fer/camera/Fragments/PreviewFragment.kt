@@ -8,6 +8,7 @@ import android.hardware.camera2.*
 import android.hardware.camera2.params.MeteringRectangle
 import android.media.Image
 import android.media.ImageReader
+import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -16,6 +17,7 @@ import android.util.Log
 import android.view.*
 import android.widget.Toast
 import hr.fer.camera.Helpers
+import hr.fer.camera.Helpers.Companion.counterFound
 import hr.fer.camera.MainActivity
 import hr.fer.camera.MainActivity.Companion.fragment
 import hr.fer.camera.MainActivity.Companion.objectsDescriptors
@@ -26,7 +28,6 @@ import kotlinx.android.synthetic.main.fragment_preview.*
 import org.opencv.android.Utils
 import org.opencv.core.Core
 import org.opencv.core.Mat
-import org.opencv.core.MatOfKeyPoint
 import org.opencv.core.Scalar
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
@@ -34,7 +35,6 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 class PreviewFragment : Fragment() {
-
 
     companion object {
         const val REQUEST_CAMERA_PERMISSION = 100
@@ -363,46 +363,52 @@ class PreviewFragment : Fragment() {
         while (fragment.isCapturing);
         val bitmap: Bitmap = Helpers.convertImageToBitmap(MainActivity.fragment)
         bitmaps = MainActivity.assetList
-        if (SURF().detect(bitmaps, objectsKeyPoints, objectsDescriptors, bitmap)) {
-            var points = SURF.points
-            println(points)
-            var coef = 0.75f
-            rectangle.visibility = View.VISIBLE
-            rectangle.top = ((points.get(0).y + points.get(1).y) * coef).toInt()
-            rectangle.right = ((points.get(2).x + points.get(3).x) * coef).toInt()
-            rectangle.bottom = ((points.get(4).y + points.get(5).y) * coef).toInt()
-            rectangle.left = ((points.get(6).x + points.get(7).x) * coef).toInt()
+        counterFound = false
+        SURFBackground().execute(bitmap)
 
-            val img = Mat()
-            Utils.bitmapToMat(bitmap, img)
-            Core.line(img, points.get(0), points.get(1), Scalar(0.0, 255.0, 255.0), 10)
-            Core.line(img, points.get(2), points.get(3), Scalar(0.0, 255.0, 255.0), 10)
-            Core.line(img, points.get(4), points.get(5), Scalar(0.0, 255.0, 255.0), 10)
-            Core.line(img, points.get(6), points.get(7), Scalar(0.0, 255.0, 255.0), 10)
+        //Wait until thread is finished; upgrade to listener
+        while (!counterFound);
 
-            val finalImage: Bitmap? = Helpers.convertOutputToBitmap(img)
+        var points = SURF.points
+        println(points)
+        var coef = 0.75f
+        rectangle.visibility = View.VISIBLE
+        rectangle.top = ((points.get(0).y + points.get(1).y) * coef).toInt()
+        rectangle.right = ((points.get(2).x + points.get(3).x) * coef).toInt()
+        rectangle.bottom = ((points.get(4).y + points.get(5).y) * coef).toInt()
+        rectangle.left = ((points.get(6).x + points.get(7).x) * coef).toInt()
 
-            return
-        }
+        val img = Mat()
+        Utils.bitmapToMat(bitmap, img)
+        Core.line(img, points.get(0), points.get(1), Scalar(0.0, 255.0, 255.0), 10)
+        Core.line(img, points.get(2), points.get(3), Scalar(0.0, 255.0, 255.0), 10)
+        Core.line(img, points.get(4), points.get(5), Scalar(0.0, 255.0, 255.0), 10)
+        Core.line(img, points.get(6), points.get(7), Scalar(0.0, 255.0, 255.0), 10)
+
+        val finalImage: Bitmap? = Helpers.convertOutputToBitmap(img)
 
         manualFocusEngaged = false
 
+        return
+
     }
 
+    private inner class SURFBackground : AsyncTask<Bitmap, Int, String>() {
+        override fun onPreExecute() {
+            super.onPreExecute()
+            println("Started SURF in background")
+        }
 
-    private fun drawRectangle() {
+        override fun doInBackground(vararg inputImage: Bitmap): String? {
+            if (SURF().detect(bitmaps, objectsKeyPoints, objectsDescriptors, inputImage.get(0))){
+                Helpers.counterFound = true
+            }
+            return "Surf found!"
+        }
 
-        /*
-       var canvas = Canvas()
-       //canvas.drawColor(0, PorterDuff.Mode.CLEAR)
-       var paint = Paint()
-       paint.style = Paint.Style.STROKE
-       paint.color = Color.WHITE
-       paint.strokeWidth = 3.0F
-       canvas.drawRect(0.0f, 10.0f, 200.0f, 300.0f, paint)
-       rectangle.draw(canvas)
-       */
-
+        override fun onPostExecute(result: String) {
+            super.onPostExecute(result)
+        }
     }
 
 

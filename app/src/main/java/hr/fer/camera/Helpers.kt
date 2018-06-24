@@ -1,10 +1,12 @@
 package hr.fer.camera
 
 import android.annotation.TargetApi
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.media.Image
+import android.os.AsyncTask
 import android.os.Build
 import android.preference.PreferenceManager
 import android.util.Log
@@ -33,6 +35,9 @@ class Helpers {
 
         val objectKeyPointsKey: String = "objectsKeyPoints"
         val objectDescriptionKey: String = "objectsDescriptors"
+
+        public var counterFound = false
+
 
 
         fun convertImageToBitmap(fragment: PreviewFragment): Bitmap {
@@ -166,7 +171,7 @@ class Helpers {
         }
 
 
-        public fun writeObjectKeyToPreferences(context: Context, data: List<MatOfKeyPoint>, key: String) {
+        public fun writeObjectKeyToPreferences(context: Context, data: LinkedList<MatOfKeyPoint>, key: String) {
             val mPrefs = PreferenceManager.getDefaultSharedPreferences(context)
             val prefsEditor = mPrefs.edit()
             val gson = Gson()
@@ -216,7 +221,6 @@ class Helpers {
                 data.add(obj)
             }
             return data
-
         }
     }
 }

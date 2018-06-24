@@ -31,6 +31,9 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import hr.fer.camera.Fragments.PreviewFragment;
+import hr.fer.camera.Helpers;
+
 public class SURF implements Serializable {
 
     static {
@@ -161,10 +164,8 @@ public class SURF implements Serializable {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
         }
-        return true;
-
+        return false;
     }
 
 
@@ -253,18 +254,32 @@ public class SURF implements Serializable {
         return null;
     }
 
-    public LinkedList<MatOfKeyPoint> getAllObjectsKeypoints(List<Bitmap> bitmaps){
-        LinkedList<MatOfKeyPoint> allDescriptorsKeyPoints = new LinkedList<>();
+    public LinkedList<MatOfKeyPoint> getAllObjectsKeypoints(List<Bitmap> bitmaps) {
+        LinkedList<MatOfKeyPoint> allCounterKeyPoints = new LinkedList<>();
         FeatureDetector featureDetector = FeatureDetector.create(FeatureDetector.SURF);
-        DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF);
-        DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
-        for (Bitmap bitmap : bitmaps){
+        for (Bitmap bitmap : bitmaps) {
             Mat objectImage = new Mat();
             Utils.bitmapToMat(bitmap, objectImage);
             MatOfKeyPoint objectKeyPoints = detectKeyPointsOnImage(objectImage, featureDetector);
-            allDescriptorsKeyPoints.add(objectKeyPoints);
+            allCounterKeyPoints.add(objectKeyPoints);
         }
-        return allDescriptorsKeyPoints;
+        return allCounterKeyPoints;
+    }
+
+    public LinkedList<MatOfKeyPoint> getAllObjectsDescriptors(List<Bitmap> bitmaps, LinkedList<MatOfKeyPoint> allCounterKeyPoints) {
+        LinkedList<MatOfKeyPoint> allObjectsDescriptors = new LinkedList<>();
+        DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF);
+        DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
+        int i = 0;
+        for (Bitmap bitmap : bitmaps) {
+            MatOfKeyPoint objectKeyPoints = allCounterKeyPoints.get(i);
+            Mat objectImage = new Mat();
+            Utils.bitmapToMat(bitmap, objectImage);
+            MatOfKeyPoint objectDescriptors = detectObjectDescriptors(objectImage, objectKeyPoints, descriptorExtractor);
+            allObjectsDescriptors.add(objectDescriptors);
+            i++;
+        }
+        return allObjectsDescriptors;
     }
 
 }

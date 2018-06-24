@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Environment.getExternalStorageDirectory
 import android.support.v4.app.Fragment
@@ -87,12 +88,11 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun onButtonClicked(view: View) {
-        objectsKeyPoints = SURF().getAllObjectsKeypoints(getLocalAssets())
-        objectsDescriptors = SURF().getAllObjectsDescriptors(getLocalAssets(), objectsKeyPoints)
-        writeObjectKeyToPreferences(this, objectsKeyPoints, objectKeyPointsKey)
-        writeDescriptorsToPreferences(this, objectsDescriptors, objectDescriptionKey)
-        objectsKeyPoints = readKeysFromPreferences(objectKeyPointsKey, this)
-        objectsDescriptors = readDescriptorsFromPreferences(objectDescriptionKey, this)
+        ComputeKeypointAndDescriptors().execute()
+        //objectsKeyPoints = SURF().getAllObjectsKeypoints(getLocalAssets())
+        //objectsDescriptors = SURF().getAllObjectsDescriptors(getLocalAssets(), objectsKeyPoints)
+        //objectsKeyPoints = readKeysFromPreferences(objectKeyPointsKey, this)
+        //objectsDescriptors = readDescriptorsFromPreferences(objectDescriptionKey, this)
     }
 
 
@@ -148,6 +148,27 @@ class MainActivity : AppCompatActivity() {
 
         os.close()
         fos.close()
+    }
+
+
+    private inner class ComputeKeypointAndDescriptors : AsyncTask<String, Int, String>() {
+        override fun onPreExecute() {
+            super.onPreExecute()
+            println("Started computing keypoints and descriptors")
+        }
+
+        override fun doInBackground(vararg params: String): String {
+            objectsKeyPoints = SURF().getAllObjectsKeypoints(getLocalAssets())
+            objectsDescriptors = SURF().getAllObjectsDescriptors(getLocalAssets(), objectsKeyPoints)
+            return "All Done!"
+        }
+
+        override fun onPostExecute(result: String) {
+            super.onPostExecute(result)
+            writeObjectKeyToPreferences(applicationContext, objectsKeyPoints, objectKeyPointsKey)
+            writeDescriptorsToPreferences(applicationContext, objectsDescriptors, objectDescriptionKey)
+            Toast.makeText(applicationContext, "Keypoints and deescriptors for counter have been calculated!", Toast.LENGTH_LONG).show()
+        }
     }
 
 }
