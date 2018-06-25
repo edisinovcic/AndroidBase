@@ -67,9 +67,9 @@ class MainActivity : AppCompatActivity() {
     fun getLocalAssets(): List<Bitmap> {
         return listOf(
                 BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo0_cropano.jpg"))),
-                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo1_cropano.jpg")))/*,
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo1_cropano.jpg"))),
                 BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo2_cropano.jpg"))),
-                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo3_cropano.jpg"))),
+                BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo3_cropano.jpg")))/*,
                 BitmapFactory.decodeStream(BufferedInputStream(assets.open("brojilo4_cropano.jpg")))
         */
         )

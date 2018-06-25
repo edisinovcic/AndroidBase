@@ -28,6 +28,7 @@ import kotlinx.android.synthetic.main.fragment_preview.*
 import org.opencv.android.Utils
 import org.opencv.core.Core
 import org.opencv.core.Mat
+import org.opencv.core.MatOfKeyPoint
 import org.opencv.core.Scalar
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
@@ -361,11 +362,13 @@ class PreviewFragment : Fragment() {
         fragment.isCapturing = true
         fragment.captureImageSession()
         while (fragment.isCapturing);
-        val bitmap: Bitmap = Helpers.convertImageToBitmap(MainActivity.fragment)
+        val inputImage: Bitmap = Helpers.convertImageToBitmap(MainActivity.fragment)
         bitmaps = MainActivity.assetList
         counterFound = false
-        SURFBackground().execute(bitmap)
 
+        for ((i, bitmap: Bitmap) in bitmaps.withIndex()) {
+            SURFBackground().execute(SURFObject(bitmap, objectsKeyPoints[i], objectsDescriptors[i], inputImage))
+        }
         //Wait until thread is finished; upgrade to listener
         while (!counterFound);
 
@@ -379,7 +382,7 @@ class PreviewFragment : Fragment() {
         rectangle.left = ((points.get(6).x + points.get(7).x) * coef).toInt()
 
         val img = Mat()
-        Utils.bitmapToMat(bitmap, img)
+        Utils.bitmapToMat(inputImage, img)
         Core.line(img, points.get(0), points.get(1), Scalar(0.0, 255.0, 255.0), 10)
         Core.line(img, points.get(2), points.get(3), Scalar(0.0, 255.0, 255.0), 10)
         Core.line(img, points.get(4), points.get(5), Scalar(0.0, 255.0, 255.0), 10)
@@ -393,23 +396,26 @@ class PreviewFragment : Fragment() {
 
     }
 
-    private inner class SURFBackground : AsyncTask<Bitmap, Int, String>() {
+    private inner class SURFBackground : AsyncTask<SURFObject, Int, String>() {
         override fun onPreExecute() {
             super.onPreExecute()
             println("Started SURF in background")
         }
 
-        override fun doInBackground(vararg inputImage: Bitmap): String? {
-            if (SURF().detect(bitmaps, objectsKeyPoints, objectsDescriptors, inputImage.get(0))){
+        override fun doInBackground(vararg surfObjects: SURFObject?): String {
+            val surfObject = surfObjects[0]!!
+            if (SURF().detect(surfObject.counterImage, surfObject.objectKeyPoint, surfObject.objectDescriptor, surfObject.inputImage)) {
                 Helpers.counterFound = true
             }
-            return "Surf found!"
+            return "Counter found!!!!\n"
         }
 
         override fun onPostExecute(result: String) {
             super.onPostExecute(result)
+            println(result)
         }
     }
 
+    class SURFObject(val counterImage: Bitmap, val objectKeyPoint: MatOfKeyPoint, val objectDescriptor: MatOfKeyPoint, val inputImage: Bitmap)
 
 }
